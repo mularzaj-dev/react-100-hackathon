@@ -92,16 +92,14 @@ const getParksNearby= async (latitude, longitude) => {
   out;
   `; 
 
-  const response = await fetch( 
-    "https://overpass.private.coffee/api/interpreter",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `data=${encodeURIComponent(query)}`,
-    }
-  ); 
+  const response = await fetch("/api/overpass", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ query }),
+});
+
   if (!response.ok) {
     return "unavailable";
   }
