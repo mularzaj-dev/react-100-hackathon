@@ -1,8 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import stateCodes from "./data/stateCodes.js";
 
+const STORAGE_KEY = "stella-maris-saved-cities";
 const API_KEY = import.meta.env.VITE_CENSUS_API_KEY;
+
+const getCityKey = (city) => `${city.name}-${city.admin1}`;
+
+const readSavedCities = () => {
+  try {
+    const storedCities = localStorage.getItem(STORAGE_KEY);
+    return storedCities ? JSON.parse(storedCities) : [];
+  } catch (error) {
+    return [];
+  }
+};
 
 const formatNumber = (value) => {
   if (value === null || value === undefined || value === "N/A" || value === "Unavailable") {
@@ -189,6 +201,51 @@ function App() {
   const [error, setError] = useState("");
   const [firstCityResult, setFirstCityResult] = useState(null);
   const [secondCityResult, setSecondCityResult] = useState(null);
+  const [savedCities, setSavedCities] = useState(() => readSavedCities());
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCities));
+  }, [savedCities]);
+
+  const handleSaveCity = (city) => {
+    if (!city) {
+      return;
+    }
+
+    setSavedCities((currentCities) => {
+      const cityKey = getCityKey(city);
+      const alreadySaved = currentCities.some((savedCity) => getCityKey(savedCity) === cityKey);
+
+      if (alreadySaved) {
+        return currentCities.filter((savedCity) => getCityKey(savedCity) !== cityKey);
+      }
+
+      return [city, ...currentCities].slice(0, 6);
+    });
+  };
+
+  const handleSaveComparison = () => {
+    if (!firstCityResult || !secondCityResult) {
+      return;
+    }
+
+    setSavedCities((currentCities) => {
+      const mergedCities = [...currentCities];
+
+      [firstCityResult, secondCityResult].forEach((city) => {
+        const cityKey = getCityKey(city);
+        const alreadySaved = mergedCities.some((savedCity) => getCityKey(savedCity) === cityKey);
+
+        if (!alreadySaved) {
+          mergedCities.push(city);
+        }
+      });
+
+      return mergedCities.slice(0, 6);
+    });
+  };
 
   const quickInsights = useMemo(() => {
     if (!firstCityResult || !secondCityResult) {
@@ -271,6 +328,8 @@ function App() {
 
       setFirstCityResult(firstCityData);
       setSecondCityResult(secondCityData);
+      setSelectedCity(null);
+      setShowDetailedBreakdown(true);
     } catch (error) {
       setError("Something went wrong while loading the comparison. Please try again.");
     } finally {
@@ -282,6 +341,18 @@ function App() {
     firstCityResult && secondCityResult
       ? "We have enough basic data to compare the cities, but a final winner score needs additional trusted metrics like cost of living, walkability, and safety before it can be calculated fairly."
       : "Compare two cities to unlock the final winner breakdown.";
+
+  const activeBreakdownCity =
+    showDetailedBreakdown && firstCityResult && secondCityResult
+      ? null
+      : selectedCity || firstCityResult || secondCityResult;
+
+  const breakdownCities =
+    showDetailedBreakdown && firstCityResult && secondCityResult
+      ? [firstCityResult, secondCityResult]
+      : activeBreakdownCity
+        ? [activeBreakdownCity]
+        : [];
 
   return (
     <>
@@ -379,6 +450,16 @@ function App() {
                 <MetricRow label="Walkability" isComingSoon />
                 <MetricRow label="Safety Index" isComingSoon />
               </div>
+
+              <button
+                type="button"
+                className="tiny-button"
+                onClick={() => handleSaveCity(firstCityResult)}
+              >
+                {savedCities.some((savedCity) => getCityKey(savedCity) === getCityKey(firstCityResult))
+                  ? "Unsave City"
+                  : "Save City"}
+              </button>
             </article>
 
             <article className="city-card">
@@ -402,7 +483,109 @@ function App() {
                 <MetricRow label="Walkability" isComingSoon />
                 <MetricRow label="Safety Index" isComingSoon />
               </div>
+
+              <button
+                type="button"
+                className="tiny-button"
+                onClick={() => handleSaveCity(secondCityResult)}
+              >
+                {savedCities.some((savedCity) => getCityKey(savedCity) === getCityKey(secondCityResult))
+                  ? "Unsave City"
+                  : "Save City"}
+              </button>
             </article>
+          </section>
+        ) : null}
+
+        <section className="panel saved-panel" aria-labelledby="saved-title">
+          <p className="panel-eyebrow">Saved cities</p>
+          <h2 id="saved-title">Your shortlist</h2>
+
+          {savedCities.length > 0 ? (
+            <div className="saved-list">
+              {savedCities.map((city) => {
+                const isActive = selectedCity && getCityKey(selectedCity) === getCityKey(city);
+
+                return (
+                  <button
+                    key={getCityKey(city)}
+                    type="button"
+                    className={`saved-item ${isActive ? "saved-item-active" : ""}`}
+                    onClick={() => setSelectedCity(city)}
+                  >
+                    <span>{city.name}</span>
+                    <small>{city.admin1}</small>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="empty-state">Save a city from the comparison cards to build your shortlist.</p>
+          )}
+        </section>
+
+        {breakdownCities.length > 0 ? (
+          <section className="panel breakdown-panel" aria-labelledby="breakdown-title">
+            <p className="panel-eyebrow">Detailed breakdown</p>
+            <div className="breakdown-header">
+              <div>
+                <h2 id="breakdown-title">
+                  {showDetailedBreakdown && firstCityResult && secondCityResult
+                    ? "City comparison"
+                    : breakdownCities[0].name}
+                </h2>
+                <p className="breakdown-subtitle">
+                  {showDetailedBreakdown && firstCityResult && secondCityResult
+                    ? "Comparing both cities side by side"
+                    : `${breakdownCities[0].admin1} · current snapshot`}
+                </p>
+              </div>
+
+              {savedCities.length > 0 ? (
+                <div className="breakdown-tabs" aria-label="Saved city selector">
+                  {savedCities.map((city) => (
+                    <button
+                      key={getCityKey(city)}
+                      type="button"
+                      className={`tab-button ${selectedCity && getCityKey(selectedCity) === getCityKey(city) ? "tab-button-active" : ""}`}
+                      onClick={() => {
+                        setSelectedCity(city);
+                        setShowDetailedBreakdown(false);
+                      }}
+                    >
+                      {city.name}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="breakdown-grid">
+              {breakdownCities.map((city) => (
+                <article key={`${city.name}-${city.admin1}`} className="breakdown-card">
+                  <h3>{city.name}</h3>
+                  <p className="breakdown-subtitle">{city.admin1}</p>
+                  <ul>
+                    <li>Weather: {city.condition}</li>
+                    <li>Temperature: {city.temperature}°F</li>
+                    <li>Median rent: {formatCurrency(city.medianRent)}</li>
+                    <li>Population: {formatNumber(city.population)}</li>
+                    <li>Parks nearby: {formatNumber(city.parksNearby)}</li>
+                  </ul>
+
+                  <div className="breakdown-notes">
+                    <p>
+                      {city.parksNearby !== "Unavailable"
+                        ? `${city.parksNearby} parks were found within a 10-mile radius.`
+                        : "Park data is not available yet for this city."}
+                    </p>
+                    <p className="coming-soon-text">Things-to-do recommendations are coming soon.</p>
+                    <p className="coming-soon-text">School rating data is not yet available in this version.</p>
+                    <p className="coming-soon-text">Job market insights are still being sourced and will appear here soon.</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </section>
         ) : null}
 
@@ -431,10 +614,23 @@ function App() {
           <p className="panel-eyebrow">Next steps</p>
           <h2 id="next-steps-title">Keep exploring</h2>
           <div className="action-stack">
-            <button type="button" className="secondary-button" disabled>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={!firstCityResult && !secondCityResult}
+              onClick={() => {
+                setShowDetailedBreakdown(Boolean(firstCityResult && secondCityResult));
+                setSelectedCity(null);
+              }}
+            >
               View Detailed Breakdown
             </button>
-            <button type="button" className="secondary-button" disabled>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={!firstCityResult || !secondCityResult}
+              onClick={handleSaveComparison}
+            >
               Save Comparison
             </button>
             <button type="button" className="secondary-button" disabled>

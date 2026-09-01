@@ -192,7 +192,9 @@ input {
 }
 
 .primary-button,
-.secondary-button {
+.secondary-button,
+.tiny-button,
+.saved-item {
   border: none;
   border-radius: 14px;
   cursor: pointer;
@@ -354,6 +356,128 @@ input {
 .panel p {
   color: var(--slate-700);
   line-height: 1.6;
+}
+
+.empty-state,
+.breakdown-subtitle,
+.coming-soon-text {
+  margin-top: 0.7rem;
+  color: var(--slate-700);
+}
+
+.saved-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.saved-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 180px;
+  padding: 0.95rem 1rem;
+  background: linear-gradient(180deg, rgba(13, 35, 66, 0.03), rgba(13, 35, 66, 0.01));
+  border: 1px solid var(--slate-200);
+  border-radius: 18px;
+  color: var(--navy-900);
+  text-align: left;
+  box-shadow: 0 10px 22px rgba(13, 35, 66, 0.04);
+}
+
+.saved-item-active {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.38);
+  box-shadow: 0 12px 22px rgba(212, 175, 55, 0.08);
+}
+
+.saved-item span {
+  font-weight: 700;
+}
+
+.saved-item small {
+  color: var(--slate-700);
+}
+
+.breakdown-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.breakdown-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.tab-button {
+  padding: 0.55rem 0.8rem;
+  background: var(--sand-100);
+  border: 1px solid var(--slate-300);
+  color: var(--navy-900);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tab-button-active {
+  background: var(--navy-900);
+  border-color: var(--navy-900);
+  color: var(--white);
+}
+
+.tiny-button {
+  margin-top: 1rem;
+  padding: 0.7rem 0.9rem;
+  width: 100%;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: var(--navy-900);
+  font-weight: 700;
+}
+
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.breakdown-card {
+  padding: 1.1rem 1.1rem 1.2rem;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(13, 35, 66, 0.03), rgba(13, 35, 66, 0.01));
+  border: 1px solid var(--slate-200);
+  box-shadow: 0 10px 24px rgba(13, 35, 66, 0.04);
+}
+
+.breakdown-card h3 {
+  margin: 0 0 0.2rem;
+  color: var(--navy-900);
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+}
+
+.breakdown-card ul {
+  margin: 0.8rem 0 0;
+  padding-left: 1.15rem;
+  color: var(--slate-700);
+  line-height: 1.8;
+}
+
+.breakdown-notes {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--slate-200);
+}
+
+.breakdown-notes p {
+  margin: 0.5rem 0 0;
 }
 
 .winner-panel p:last-child {
